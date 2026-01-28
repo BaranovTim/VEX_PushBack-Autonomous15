@@ -111,7 +111,7 @@ def user_control():
 
     #aligning to get the middle blocks
     drivetrain.drive_for(FORWARD, 380, MM)
-    turn_by(-45)                            #----------------- tested only up to here.. everything further has not been tested
+    turn_by(-45)                          
     
     #collecting the middle blocks
     mid_motor.spin(REVERSE)
@@ -119,23 +119,22 @@ def user_control():
     mid_motor.stop()
 
     #aligning to get the blocks under the long goal and collecting 'em
-    turn_by(-10)
+    turn_by(-3)
     mid_motor.spin(REVERSE)
-    drivetrain.drive_for(FORWARD, 500, MM)
+    drivetrain.drive_for(FORWARD, 620, MM)
     wait(0.5, SECONDS)
     mid_motor.stop()
+    sorter.set(False)
 
     #going back to the middle goal
-    #drivetrain.drive_for(REVERSE, 400, MM)
-    #turn_by(20)
-    #drivetrain.drive_for(REVERSE, 400, MM)
-    #turn_by(-90)
-    #drivetrain.drive_for(REVERSE, 200, MM, wait=False)
+    drivetrain.drive_for(REVERSE, 700, MM)
+    turn_by(-87)   #----------------- tested only up to here.. everything further has not been tested
+    drivetrain.drive_for(REVERSE, 200, MM)
     
     #scoring into the middle goal
-    #mid_motor.spin(REVERSE)
-    #top_motor.spin(REVERSE)
-    #wait(2, SECONDS)
+    mid_motor.spin(REVERSE)
+    top_motor.spin(REVERSE)
+    wait(2, SECONDS)
 
 
     #thats the code for the long goal
