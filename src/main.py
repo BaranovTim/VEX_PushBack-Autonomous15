@@ -41,9 +41,9 @@ def wrap180(deg):
     while deg < -180: deg += 360
     return deg
 
-def turn_to(target_deg, kP=1.2, min_speed=8, max_speed=60, tol=1.5):
+def turn_to(target_deg, kP=0.8, min_speed=8, max_speed=20, tol=2.5):
     while True:
-        err = target_deg - imu.rotation(DEGREES)
+        err = wrap180(target_deg - imu.rotation(DEGREES))
 
         if abs(err) <= tol:
             break
@@ -59,11 +59,20 @@ def turn_to(target_deg, kP=1.2, min_speed=8, max_speed=60, tol=1.5):
         left_drive.spin(FORWARD)
         right_drive.spin(FORWARD)
 
-        wait(20, MSEC)
+        wait(0, MSEC)
 
     left_drive.stop()
     right_drive.stop()
 
+def show_heading():
+    controller_1.screen.clear_screen()
+    while True:
+        heading = imu.rotation(DEGREES)
+        controller_1.screen.set_cursor(1, 1)
+        controller_1.screen.print("Heading:")
+        controller_1.screen.set_cursor(2, 1)
+        controller_1.screen.print(round(heading, 1))
+        wait(500, MSEC)
 
 def turn_by(delta_deg, **kwargs):
     target = imu.rotation(DEGREES) + delta_deg
@@ -87,16 +96,17 @@ def pre_autonomous():
     imu.set_rotation(0, DEGREES)
     sorter.set(True)
     double_parking.set(False)
-    wait(1, SECONDS)                                                                                                                                                                         
+    wait(1, SECONDS)      
+                                                                                                                                                                    
 
 
 
 bunny_ear_state = False
 sorter_state = False
 double_parking_state = False
-
 #SWITCH to autonomous() from user_control()
 def user_control():
+    Thread(show_heading)   
     brain.screen.print("autonomous code")
     sorter.set(True)
     double_parking.set(False)
@@ -111,7 +121,12 @@ def user_control():
 
     #aligning to get the middle blocks
     drivetrain.drive_for(FORWARD, 380, MM)
-    turn_by(-45)                          
+    left_drive.set_velocity(20, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(20, PERCENT)  
+    wait(0.1, SECONDS)
+    turn_by(-45)                
+    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(50, PERCENT)    
     
     #collecting the middle blocks
     mid_motor.spin(REVERSE)
@@ -119,38 +134,60 @@ def user_control():
     mid_motor.stop()
 
     #aligning to get the blocks under the long goal and collecting 'em
+    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(50, PERCENT)   
     turn_by(-3)
+    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(50, PERCENT)   
     mid_motor.spin(REVERSE)
     drivetrain.drive_for(FORWARD, 620, MM)
+    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(50, PERCENT)   
     wait(0.5, SECONDS)
     mid_motor.stop()
     sorter.set(False)
 
     #going back to the middle goal
-    drivetrain.drive_for(REVERSE, 700, MM)
-    turn_by(-87)   #----------------- tested only up to here.. everything further has not been tested
-    drivetrain.drive_for(REVERSE, 200, MM)
+    drivetrain.drive_for(REVERSE, 680, MM)
+    turn_by(-87)    
+    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(50, PERCENT)                          #----------------- tested only up to here.. everything further has not been tested
+    drivetrain.drive_for(REVERSE, 420, MM)
     
     #scoring into the middle goal
+    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(50, PERCENT) 
     mid_motor.spin(REVERSE)
-    top_motor.spin(REVERSE)
-    wait(2, SECONDS)
-
+    top_motor.spin_for(REVERSE, 1, SECONDS)
+    top_motor.spin(FORWARD)
+    wait(4, SECONDS)
 
     #thats the code for the long goal
-    #mid_motor.spin(REVERSE)
-    #start_time = time.time()
-    #left_drive.set_velocity(50, PERCENT)
-    #ight_drive.set_velocity(50, PERCENT)
-    #while time.time() - start_time < 5:
-    #    drivetrain.turn_for(LEFT, jitter, DEGREES)
-    #    wait(0.1, SECONDS)
-    #    drivetrain.turn_for(RIGHT, jitter, DEGREES)
-    #    wait(0.1, SECONDS)
-    #    drivetrain.drive_for(FORWARD, 20, MM)
+    drivetrain.drive_for(FORWARD, 1400, MM)
+    turn_by(-45)
+    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
+    right_drive.set_velocity(50, PERCENT)
+    sorter.set(False)
+    drivetrain.drive_for(FORWARD, 150, MM)
 
-   
+    mid_motor.spin(FORWARD)
+    start_time = time.time()
+    left_drive.set_velocity(50, PERCENT)
+    right_drive.set_velocity(50, PERCENT)
+    while time.time() - start_time < 5:
+        drivetrain.turn_for(LEFT, jitter, DEGREES)
+        wait(0.1, SECONDS)
+        drivetrain.turn_for(RIGHT, jitter, DEGREES)
+        wait(0.1, SECONDS)
+        drivetrain.drive_for(FORWARD, 20, MM)
+
+    drivetrain.drive_for(REVERSE, 700, MM)
+    top_motor.spin(FORWARD)
+    wait(5, SECONDS)
+
+
     mid_motor.stop()
+    top_motor.stop()
     drivetrain.stop()
 
 def mix_arcade(forward, turn): # makes the robot to be able to turn and go forward at the same time
