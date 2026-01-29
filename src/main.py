@@ -41,7 +41,7 @@ def wrap180(deg):
     while deg < -180: deg += 360
     return deg
 
-def turn_to(target_deg, kP=0.8, min_speed=8, max_speed=20, tol=2.5):
+def turn_to(target_deg, kP=1, min_speed=8, max_speed=50, tol=1.5):
     while True:
         err = wrap180(target_deg - imu.rotation(DEGREES))
 
@@ -64,6 +64,9 @@ def turn_to(target_deg, kP=0.8, min_speed=8, max_speed=20, tol=2.5):
     left_drive.stop()
     right_drive.stop()
 
+    left_drive.set_velocity(50, PERCENT)
+    right_drive.set_velocity(50, PERCENT)
+
 def show_heading():
     controller_1.screen.clear_screen()
     while True:
@@ -76,7 +79,7 @@ def show_heading():
 
 def turn_by(delta_deg, **kwargs):
     target = imu.rotation(DEGREES) + delta_deg
-    turn_to(target, **kwargs)
+    turn_to(target, **kwargs) 
 
 
 
@@ -115,65 +118,46 @@ def user_control():
 
     #initial settings
     mid_motor.set_velocity(100, PERCENT)
-    left_drive.set_velocity(20, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(20, PERCENT) # same here
+    top_motor.set_velocity(100, PERCENT)
+    left_drive.set_velocity(20, PERCENT) 
+    right_drive.set_velocity(20, PERCENT)
     drivetrain.set_turn_velocity(30, PERCENT)
 
     #aligning to get the middle blocks
-    drivetrain.drive_for(FORWARD, 380, MM)
-    left_drive.set_velocity(20, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(20, PERCENT)  
-    wait(0.1, SECONDS)
-    turn_by(-45)                
-    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(50, PERCENT)    
+    drivetrain.drive_for(FORWARD, 380, MM)  
+    turn_by(-45)                    
     
     #collecting the middle blocks
     mid_motor.spin(REVERSE)
     drivetrain.drive_for(FORWARD, 400, MM)
     mid_motor.stop()
 
-    #aligning to get the blocks under the long goal and collecting 'em
-    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(50, PERCENT)   
-    turn_by(-3)
-    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(50, PERCENT)   
+    #aligning to get the blocks under the long goal and collecting 'em  
+    turn_by(-3) 
     mid_motor.spin(REVERSE)
     drivetrain.drive_for(FORWARD, 620, MM)
-    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(50, PERCENT)   
     wait(0.5, SECONDS)
     mid_motor.stop()
     sorter.set(False)
 
     #going back to the middle goal
     drivetrain.drive_for(REVERSE, 680, MM)
-    turn_by(-87)    
-    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(50, PERCENT)                          #----------------- tested only up to here.. everything further has not been tested
+    turn_by(-87)
     drivetrain.drive_for(REVERSE, 420, MM)
     
     #scoring into the middle goal
-    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(50, PERCENT) 
     mid_motor.spin(REVERSE)
-    top_motor.spin_for(REVERSE, 1, SECONDS)
+    top_motor.spin_for(REVERSE, 1.5, SECONDS)
     top_motor.spin(FORWARD)
     wait(4, SECONDS)
 
     #thats the code for the long goal
-    drivetrain.drive_for(FORWARD, 1400, MM)
+    drivetrain.drive_for(FORWARD, 1350, MM)
     turn_by(-45)
-    left_drive.set_velocity(50, PERCENT) # 10 is set just for testing
-    right_drive.set_velocity(50, PERCENT)
-    sorter.set(False)
-    drivetrain.drive_for(FORWARD, 150, MM)
+    drivetrain.drive_for(FORWARD, 50, MM)
 
     mid_motor.spin(FORWARD)
     start_time = time.time()
-    left_drive.set_velocity(50, PERCENT)
-    right_drive.set_velocity(50, PERCENT)
     while time.time() - start_time < 5:
         drivetrain.turn_for(LEFT, jitter, DEGREES)
         wait(0.1, SECONDS)
