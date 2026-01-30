@@ -99,7 +99,7 @@ def pre_autonomous():
     imu.set_rotation(0, DEGREES)
     sorter.set(True)
     double_parking.set(False)
-    wait(1, SECONDS)      
+    wait(2, SECONDS)      
                                                                                                                                                                     
 
 
@@ -121,6 +121,7 @@ def user_control():
     top_motor.set_velocity(100, PERCENT)
     left_drive.set_velocity(20, PERCENT) 
     right_drive.set_velocity(20, PERCENT)
+    drivetrain.set_turn_velocity(30, PERCENT)
 
     #aligning to get the middle blocks
     drivetrain.drive_for(FORWARD, 380, MM)  
@@ -140,7 +141,7 @@ def user_control():
     sorter.set(False)
 
     #going back to the middle goal
-    drivetrain.drive_for(REVERSE, 680, MM)
+    drivetrain.drive_for(REVERSE, 660, MM)
     turn_by(-93)
     sorter.set(True)
     drivetrain.drive_for(FORWARD, 420, MM)
@@ -148,13 +149,15 @@ def user_control():
     #scoring into the middle goal
     mid_motor.spin(FORWARD)
     wait(3, SECONDS)
+    turn_by(-10)
 
     #thats the code for the long goal
-    drivetrain.drive_for(REVERSE, 1350, MM)
-    turn_by(-135)
-    drivetrain.drive_for(FORWARD, 50, MM)
+    drivetrain.drive_for(REVERSE, 1250, MM)
+    turn_by(-125)
+    sorter.set(False)
+    drivetrain.drive_for(FORWARD, 200, MM)
 
-    mid_motor.spin(FORWARD)
+    mid_motor.spin(REVERSE)
     start_time = time.time()
     while time.time() - start_time < 5:
         drivetrain.turn_for(LEFT, jitter, DEGREES)
@@ -163,8 +166,8 @@ def user_control():
         wait(0.1, SECONDS)
         drivetrain.drive_for(FORWARD, 20, MM)
 
-    drivetrain.drive_for(REVERSE, 700, MM)
-    top_motor.spin(FORWARD)
+    drivetrain.drive_for(REVERSE, 730, MM)
+    top_motor.spin(REVERSE)
     wait(5, SECONDS)
 
 

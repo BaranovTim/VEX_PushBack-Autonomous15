@@ -92,9 +92,9 @@ def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     y = (1 - expo) * x + expo * (x * x * x)
     return y * 100 * scale
 
+
 def pre_autonomous():
     brain.screen.clear_screen()
-    brain.screen.print("pre auton code")
     calibrate_imu()
     imu.set_rotation(0, DEGREES)
     sorter.set(True)
@@ -110,7 +110,6 @@ double_parking_state = False
 #SWITCH to autonomous() from user_control()
 def user_control():
     Thread(show_heading)   
-    brain.screen.print("autonomous code")
     sorter.set(True)
     double_parking.set(False)
 

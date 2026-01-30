@@ -1,13 +1,13 @@
 {
 	"project": {
 		"name": "right_auton",
-		"slot": 1,
+		"slot": 2,
 		"description": "",
 		"platform": "V5",
 		"creationDate": "Fri, 23 Jan 2026 21:39:23 GMT",
 		"language": "python",
 		"python": {
-			"main": "src/left_auton.py"
+			"main": "src/right_auton.py"
 		},
 		"sdkVersion": "V5_1_0_1_25"
 	},
