@@ -41,7 +41,7 @@ def wrap180(deg):
     while deg < -180: deg += 360
     return deg
 
-def turn_to(target_deg, kP=1, min_speed=8, max_speed=50, tol=1.5):
+def turn_to(target_deg, kP=1.5, min_speed=8, max_speed=50, tol=1.5):
     while True:
         err = wrap180(target_deg - imu.rotation(DEGREES))
 
@@ -64,8 +64,8 @@ def turn_to(target_deg, kP=1, min_speed=8, max_speed=50, tol=1.5):
     left_drive.stop()
     right_drive.stop()
 
-    left_drive.set_velocity(50, PERCENT)
-    right_drive.set_velocity(50, PERCENT)
+    left_drive.set_velocity(70, PERCENT)
+    right_drive.set_velocity(70, PERCENT)
 
 def show_heading():
     controller_1.screen.clear_screen()
@@ -101,7 +101,15 @@ def pre_autonomous():
     double_parking.set(False)
     wait(2, SECONDS)      
                                                                                                                                                                     
-
+def mid_motor_break():
+    time = 0.5
+    mid_motor.set_velocity(50, PERCENT)
+    for i in range(3): 
+        mid_motor.spin(REVERSE)
+        wait(time, SECONDS)
+        mid_motor.spin(FORWARD)
+        wait(time, SECONDS)
+        time += 0.3
 
 
 bunny_ear_state = False
@@ -166,7 +174,15 @@ def user_control():
         wait(0.1, SECONDS)
         drivetrain.drive_for(FORWARD, 20, MM)
 
+    start_pos = mid_motor.position(DEGREES) # checking that the mid motor did not jam
+    if abs(mid_motor.position(DEGREES) - start_pos) < 5:
+        mid_motor_break()
+
     drivetrain.drive_for(REVERSE, 730, MM)
+
+    start_pos = mid_motor.position(DEGREES) # checking that the mid motor did not jam
+    if abs(mid_motor.position(DEGREES) - start_pos) < 5:
+        mid_motor_break()
     top_motor.spin(REVERSE)
     wait(5, SECONDS)
 
