@@ -84,6 +84,27 @@ def turn_by(delta_deg, **kwargs):
 
 # -- end of the code for Inertial Sensor
 
+def turn_one_side(deg=90, side=RIGHT, speed=60):
+
+    left_drive.stop()
+    right_drive.stop()
+
+    if side == LEFT:
+        left_drive.set_velocity(0, PERCENT)
+        right_drive.set_velocity(speed, PERCENT)
+        right_drive.spin_for(FORWARD, deg, DEGREES)
+
+    elif side == RIGHT:
+        right_drive.set_velocity(0, PERCENT)
+        left_drive.set_velocity(speed, PERCENT)
+        left_drive.spin_for(FORWARD, deg, DEGREES)
+
+    else:
+        controller_1.screen.clear_screen()
+        controller_1.screen.print("Invalid side")
+
+
+
 def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     # expo: 0 = linear, 1 = very soft center
     if abs(value) < deadband:
@@ -92,29 +113,40 @@ def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     y = (1 - expo) * x + expo * (x * x * x)
     return y * 100 * scale
 
-def smooth_acceleration(input_speed, distance):
-    accel_dist = 0.2 * distance 
-    # thats the distance that the robot accelerates/decelerates
-    decel_start = 0.8 * distance 
-    # thats when the robot starts decelerating
-    step = 1 
-    traveled = 0
+def smooth_acceleration(input_speed, distance, start_speed=20, end_speed=20):
+    accel_dist = 0.2 * distance
+    decel_start = 0.8 * distance
 
-    while traveled < distance:
-        if traveled < accel_dist:
-            speed = input_speed * (traveled / accel_dist)
+    left_drive.reset_position()
+    right_drive.reset_position()
 
-        elif traveled > decel_start:
-            speed = input_speed * ((distance - traveled) / (distance - decel_start))
+    drivetrain.set_drive_velocity(10, PERCENT)
+    drivetrain.drive(FORWARD)
 
+    while True:
+        # average distance traveled
+        traveled = (
+            abs(left_drive.position(DEGREES)) +
+            abs(right_drive.position(DEGREES))
+        ) / 2
+
+        # convert wheel degrees → mm
+        traveled_mm = traveled * (314 / 360)
+
+        if traveled_mm >= distance:
+            break
+
+        if traveled_mm < accel_dist:
+            speed = max(start_speed, input_speed * (traveled_mm / accel_dist))
+        elif traveled_mm > decel_start:
+            speed = max(end_speed, input_speed * ((distance - traveled_mm) / (distance - decel_start)))
         else:
             speed = input_speed
 
-        left_drive.set_velocity(speed, PERCENT) 
-        right_drive.set_velocity(speed, PERCENT)
-        drivetrain.drive_for(FORWARD, step, MM)
+        drivetrain.set_drive_velocity(speed, PERCENT)
+        wait(10, MSEC)
 
-        traveled += step
+    drivetrain.stop()
 
 def pre_autonomous():
     brain.screen.clear_screen()
@@ -161,7 +193,27 @@ def user_control():
     mid_motor.set_velocity(100, PERCENT)
     top_motor.set_velocity(100, PERCENT)
 
-    smooth_acceleration(60, 700)
+    #driving to the first loader
+    smooth_acceleration(60, 1195)
+    turn_by(-85)
+    sorter.set(False)
+    mid_motor.spin(REVERSE)
+
+    #collecting the blocks from the loader
+    smooth_acceleration(40, 280, end_speed=30)
+    wait(4, SECONDS)
+
+    #going to the long goal and scoring the blocks
+    smooth_acceleration(70, 730)
+    top_motor.spin(REVERSE)
+    wait(4, SECONDS)
+
+    sorter.set(True)
+    mid_motor.stop()
+    top_motor.stop()
+
+    #going to the top left long goal
+    
 
 #SWITCH to user_control() from autonomous() -----------------------------------------------------------------------------------
 def autonomous():
