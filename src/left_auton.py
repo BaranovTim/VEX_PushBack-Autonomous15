@@ -116,7 +116,7 @@ bunny_ear_state = False
 sorter_state = False
 double_parking_state = False
 #SWITCH to autonomous() from user_control() -----------------------------------------------------------------------------
-def user_control():
+def autonomous():
     Thread(show_heading)   
     sorter.set(True)
     double_parking.set(False)
@@ -211,17 +211,17 @@ def deadband(v, db=10):
     return 0 if abs(v) < db else v
 
 #SWITCH to user_control() from autonomous() -----------------------------------------------------------------------------------
-def autonomous():
+def user_control():
     global bunny_ear_state, sorter_state, double_parking_state
     brain.screen.clear_screen()
     top_motor.set_stopping(HOLD) # tries to freeze when stops
     mid_motor.set_stopping(HOLD)
-    left_motor1.set_stopping(COAST)
-    left_motor2.set_stopping(COAST)
-    right_motor1.set_stopping(COAST)
-    right_motor2.set_stopping(COAST)
-    left_drive.set_stopping(COAST)
-    right_drive.set_stopping(COAST)
+    left_motor1.set_stopping(HOLD)
+    left_motor2.set_stopping(HOLD)
+    right_motor1.set_stopping(HOLD)
+    right_motor2.set_stopping(HOLD)
+    left_drive.set_stopping(HOLD)
+    right_drive.set_stopping(HOLD)
 
 
     prevA = False
@@ -281,10 +281,10 @@ def autonomous():
         #-------- Motor 2
         if controller_1.buttonL2.pressing():
             mid_motor.set_velocity(100, PERCENT)
-            mid_motor.spin(FORWARD)
+            mid_motor.spin(REVERSE)
         elif controller_1.buttonL1.pressing():
             mid_motor.set_velocity(100, PERCENT)
-            mid_motor.spin(REVERSE)
+            mid_motor.spin(FORWARD)
         else:
             mid_motor.stop()
 

@@ -113,40 +113,54 @@ def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     y = (1 - expo) * x + expo * (x * x * x)
     return y * 100 * scale
 
-def smooth_acceleration(input_speed, distance, start_speed=20, end_speed=20):
-    accel_dist = 0.2 * distance
-    decel_start = 0.8 * distance
+def smooth_acceleration(input_speed, distance_mm, start_speed=30, end_speed=20):
+    if distance_mm == 0:
+        left_drive.stop()
+        right_drive.stop()
+        return
+
+    # Decide direction from sign of distance
+    dir = FORWARD if distance_mm > 0 else REVERSE
+    target = abs(distance_mm)
+
+    accel_dist  = 0.2 * target
+    decel_start = 0.8 * target
 
     left_drive.reset_position()
     right_drive.reset_position()
 
-    drivetrain.set_drive_velocity(10, PERCENT)
-    drivetrain.drive(FORWARD)
+    # Start moving
+    left_drive.spin(dir, start_speed, PERCENT)
+    right_drive.spin(dir, start_speed, PERCENT)
 
     while True:
-        # average distance traveled
-        traveled = (
-            abs(left_drive.position(DEGREES)) +
-            abs(right_drive.position(DEGREES))
-        ) / 2
+        traveled_deg = (abs(left_drive.position(DEGREES)) + abs(right_drive.position(DEGREES))) / 2
+        traveled_mm  = traveled_deg * (314 / 360)  # your conversion
 
-        # convert wheel degrees → mm
-        traveled_mm = traveled * (314 / 360)
-
-        if traveled_mm >= distance:
+        if traveled_mm >= target:
             break
 
         if traveled_mm < accel_dist:
-            speed = max(start_speed, input_speed * (traveled_mm / accel_dist))
+            ratio = traveled_mm / accel_dist if accel_dist > 0 else 1
+            speed = max(start_speed, input_speed * ratio)
+
         elif traveled_mm > decel_start:
-            speed = max(end_speed, input_speed * ((distance - traveled_mm) / (distance - decel_start)))
+            denom = (target - decel_start)
+            ratio = (target - traveled_mm) / denom if denom > 0 else 0
+            speed = max(end_speed, input_speed * ratio)
+
         else:
             speed = input_speed
 
-        drivetrain.set_drive_velocity(speed, PERCENT)
+        # Force direction explicitly every loop
+        left_drive.spin(dir, speed, PERCENT)
+        right_drive.spin(dir, speed, PERCENT)
+
         wait(10, MSEC)
 
-    drivetrain.stop()
+    left_drive.stop(BRAKE)
+    right_drive.stop(BRAKE)
+
 
 def pre_autonomous():
     brain.screen.clear_screen()
@@ -194,17 +208,26 @@ def user_control():
     top_motor.set_velocity(100, PERCENT)
 
     #driving to the first loader
-    smooth_acceleration(60, 1195)
+    smooth_acceleration(60, 1200)
     turn_by(-85)
-    sorter.set(False)
-    mid_motor.spin(REVERSE)
+    sorter.set(True)
+    mid_motor.spin(FORWARD)
+    straight_heading = imu.heading()
 
     #collecting the blocks from the loader
-    smooth_acceleration(40, 280, end_speed=30)
-    wait(4, SECONDS)
+    smooth_acceleration(40, 310, end_speed=40)
+    jitter = 10
+    start_time = time.time()
+    while time.time() - start_time < 3:
+        turn_by(-jitter)
+        wait(0.1, SECONDS)
+        turn_by(jitter)
+        wait(0.1, SECONDS)
+        drivetrain.drive_for(FORWARD, 20, MM)
+    turn_to(straight_heading)
 
     #going to the long goal and scoring the blocks
-    smooth_acceleration(70, 730)
+    smooth_acceleration(70, -730)
     top_motor.spin(REVERSE)
     wait(4, SECONDS)
 
