@@ -149,7 +149,7 @@ def pre_autonomous():
     calibrate_imu()
     imu.set_rotation(0, DEGREES)
     sorter.set(False)
-    bunny_ear.set(False)
+    bunny_ear.set(True)
     double_parking.set(False)
     wait(2, SECONDS)       
                                                                                                                                                                     

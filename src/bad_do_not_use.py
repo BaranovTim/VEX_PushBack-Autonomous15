@@ -11,6 +11,7 @@ mid_motor1 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, False)
 mid_motor2 = Motor(Ports.PORT9, GearSetting.RATIO_18_1, True)
 mid_motor = MotorGroup(mid_motor1, mid_motor2)
 
+
 left_motor1 = Motor(Ports.PORT20, GearSetting.RATIO_18_1, False)
 left_motor2 = Motor(Ports.PORT19, GearSetting.RATIO_18_1, False)
 left_drive = MotorGroup(left_motor1, left_motor2)
@@ -44,9 +45,9 @@ def wrap180(deg):
     while deg < -180: deg += 360
     return deg
 
-def turn_to(target_deg, kP=1.5, min_speed=8, max_speed=50, tol=1.5):
+def turn_to(target_deg, kP=0.6, min_speed=8, max_speed=30, tol=1.5):
     while True:
-        err = wrap180(target_deg - imu.rotation(DEGREES))
+        err = wrap180(target_deg - imu.heading(DEGREES))
 
         if abs(err) <= tol:
             break
@@ -62,7 +63,7 @@ def turn_to(target_deg, kP=1.5, min_speed=8, max_speed=50, tol=1.5):
         left_drive.spin(FORWARD)
         right_drive.spin(FORWARD)
 
-        wait(0, MSEC)
+        wait(10, MSEC)
 
     left_drive.stop()
     right_drive.stop()
@@ -86,27 +87,6 @@ def turn_by(delta_deg, **kwargs):
 
 # -- end of the code for Inertial Sensor
 
-def turn_one_side(deg=90, side=RIGHT, speed=60):
-
-    left_drive.stop()
-    right_drive.stop()
-
-    if side == LEFT:
-        left_drive.set_velocity(0, PERCENT)
-        right_drive.set_velocity(speed, PERCENT)
-        right_drive.spin_for(FORWARD, deg, DEGREES)
-
-    elif side == RIGHT:
-        right_drive.set_velocity(0, PERCENT)
-        left_drive.set_velocity(speed, PERCENT)
-        left_drive.spin_for(FORWARD, deg, DEGREES)
-
-    else:
-        controller_1.screen.clear_screen()
-        controller_1.screen.print("Invalid side")
-
-
-
 def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     # expo: 0 = linear, 1 = very soft center
     if abs(value) < deadband:
@@ -114,7 +94,7 @@ def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     x = value / 100.0
     y = (1 - expo) * x + expo * (x * x * x)
     return y * 100 * scale
-
+    
 def smooth_acceleration(input_speed, distance_mm, start_speed=30, end_speed=20):
     if distance_mm == 0:
         left_drive.stop()
@@ -163,14 +143,15 @@ def smooth_acceleration(input_speed, distance_mm, start_speed=30, end_speed=20):
     left_drive.stop(BRAKE)
     right_drive.stop(BRAKE)
 
-
 def pre_autonomous():
     brain.screen.clear_screen()
     controller_1.screen.clear_screen()
+    calibrate_imu()
     imu.set_rotation(0, DEGREES)
+    sorter.set(False)
     bunny_ear.set(True)
     double_parking.set(False)
-    wait(2, SECONDS)      
+    wait(2, SECONDS)       
                                                                                                                                                                     
 def mid_motor_break():
     time = 0.5
@@ -182,6 +163,26 @@ def mid_motor_break():
         wait(time, SECONDS)
         time += 0.3
 
+bunny_ear_state = False
+sorter_state = False
+double_parking_state = False
+#SWITCH to autonomous() from user_control() -----------------------------------------------------------------------------
+def autonomous():
+    Thread(show_heading)   
+    sorter.set(False)
+    double_parking.set(False)
+
+    jitter = 15
+
+    #initial settings
+    mid_motor.set_velocity(100, PERCENT)
+    top_motor.set_velocity(100, PERCENT)
+    left_drive.set_velocity(20, PERCENT) 
+    right_drive.set_velocity(20, PERCENT)
+    drivetrain.set_turn_velocity(30, PERCENT)
+
+    drivetrain.drive_for(FORWARD, 100, MM)
+    drivetrain.stop()
 
 def mix_arcade(forward, turn): 
     # makes the robot to be able to turn and go forward at the same time
@@ -198,124 +199,18 @@ def mix_arcade(forward, turn):
 def deadband(v, db=10):
     return 0 if abs(v) < db else v
 
-bunny_ear_state = False
-sorter_state = False
-double_parking_state = False
-
-#SWITCH to autonomous() from user_control() -----------------------------------------------------------------------------
-def autonomous():
-    imu.set_rotation(0, DEGREES)
-    #initial settings
-    bunny_ear.set(False)
-    mid_motor.set_velocity(100, PERCENT)
-    top_motor.set_velocity(100, PERCENT)
-
-    #driving to the first loader
-    smooth_acceleration(60, 1185)
-    sorter.set(True)
-    turn_by(-85)
-    mid_motor.spin(FORWARD)
-    straight_heading = imu.heading()
-
-    #collecting the blocks from the loader
-    smooth_acceleration(40, 280, end_speed=40)
-    wait(2.5, SECONDS)
-    mid_motor.stop()
-    turn_to(straight_heading) #smartttttttttttttt
-
-    #going to the long goal and scoring the blocks
-    smooth_acceleration(70, -250)
-    turn_by(-40)
-    smooth_acceleration(50, -545)
-    turn_by(10)
-    smooth_acceleration(20, -10)
-    turn_to(straight_heading-6)
-    straight_heading = imu.heading()
-    smooth_acceleration(80, -1670)
-    turn_by(40)
-    smooth_acceleration(50, -350)
-    turn_to(-straight_heading)
-    smooth_acceleration(70, -520)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE) # hi tim
-    wait(3.5, SECONDS)
-    top_motor.stop()
-    smooth_acceleration(40, 725, end_speed=40)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    smooth_acceleration(60, -725)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    top_motor.stop()
-    smooth_acceleration(60, 350)
-    turn_by(87)
-    smooth_acceleration(80, 2360)
-    #------------------------------------------------------------------------------------------------
-    turn_by(-85)
-    sorter.set(True)
-    mid_motor.spin(FORWARD)
-    straight_heading = imu.heading()
-
-    #collecting the blocks from the loader
-    smooth_acceleration(40, 280, end_speed=40)
-    wait(2.5, SECONDS)
-    mid_motor.stop()
-    turn_to(straight_heading) #smartttttttttttttt
-
-    #going to the long goal
-    smooth_acceleration(70, -250)
-    turn_by(-42)
-    smooth_acceleration(50, -545)
-    turn_by(10)
-    smooth_acceleration(20, -10)
-    turn_by(32)
-    straight_heading = imu.heading()
-    smooth_acceleration(80, -1670)
-    turn_by(40)
-    smooth_acceleration(50, -340)
-    turn_by(130)
-    smooth_acceleration(70, -490)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE) # hi tim
-    wait(3.5, SECONDS)
-    top_motor.stop()
-    smooth_acceleration(40, 725, end_speed=40)
-    wait(2.5, SECONDS)
-    mid_motor.stop()
-    smooth_acceleration(60, -725)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    top_motor.stop()
-    smooth_acceleration(60, 430)
-    turn_by(87)
-    smooth_acceleration(60, 1175)
-    turn_by(-90)
-    drivetrain.drive(FORWARD)
-    wait(1.2, SECONDS)
-    drivetrain.stop()
-    double_parking.set(True)
-    drivetrain.drive_for(REVERSE, 30, MM)
-    
-
-    #going to the top left long goal
-    
-
 #SWITCH to user_control() from autonomous() -----------------------------------------------------------------------------------
 def user_control():
     global bunny_ear_state, sorter_state, double_parking_state
     brain.screen.clear_screen()
     top_motor.set_stopping(HOLD) # tries to freeze when stops
     mid_motor.set_stopping(HOLD)
-    left_motor1.set_stopping(COAST)
-    left_motor2.set_stopping(COAST)
-    right_motor1.set_stopping(COAST)
-    right_motor2.set_stopping(COAST)
-    left_drive.set_stopping(COAST)
-    right_drive.set_stopping(COAST)
+    left_motor1.set_stopping(HOLD)
+    left_motor2.set_stopping(HOLD)
+    right_motor1.set_stopping(HOLD)
+    right_motor2.set_stopping(HOLD)
+    left_drive.set_stopping(HOLD)
+    right_drive.set_stopping(HOLD)
 
 
     prevA = False
@@ -333,18 +228,9 @@ def user_control():
         forward = smooth_input(raw_forward)
 
         # linear turn (tune 0.9..1.2)
-        turn = raw_turn * 1
-
-        # turn kick based on driver "jerk", but only when actually moving
-        dturn = raw_turn - prev_turn
-        prev_turn = raw_turn
-
-        if abs(dturn) > 25 and abs(forward) > 15:
-            turn = turn * 1.25
+        turn = smooth_input(raw_turn)
 
         left_speed, right_speed = mix_arcade(forward, turn)
-
-
         
         left_drive.set_velocity(left_speed, PERCENT) 
         right_drive.set_velocity(right_speed, PERCENT) 
@@ -384,10 +270,10 @@ def user_control():
         #-------- Motor 2
         if controller_1.buttonL2.pressing():
             mid_motor.set_velocity(100, PERCENT)
-            mid_motor.spin(FORWARD)
+            mid_motor.spin(REVERSE)
         elif controller_1.buttonL1.pressing():
             mid_motor.set_velocity(100, PERCENT)
-            mid_motor.spin(REVERSE)
+            mid_motor.spin(FORWARD)
         else:
             mid_motor.stop()
 

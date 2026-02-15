@@ -208,99 +208,67 @@ def autonomous():
     #initial settings
     bunny_ear.set(False)
     mid_motor.set_velocity(100, PERCENT)
-    top_motor.set_velocity(100, PERCENT)
-
-    #driving to the first loader
-    smooth_acceleration(60, 1185)
-    sorter.set(True)
-    turn_by(-85)
+    top_motor.set_velocity(55, PERCENT)
+    smooth_acceleration(70, 380, start_speed=30)
+    turn_by(-49)                    
+    #collecting the middle blocks
     mid_motor.spin(FORWARD)
-    straight_heading = imu.heading()
-
-    #collecting the blocks from the loader
-    smooth_acceleration(40, 280, end_speed=40)
-    wait(2.5, SECONDS)
-    mid_motor.stop()
-    turn_to(straight_heading) #smartttttttttttttt
-
-    #going to the long goal and scoring the blocks
-    smooth_acceleration(70, -250)
-    turn_by(-40)
-    smooth_acceleration(50, -545)
-    turn_by(10)
-    smooth_acceleration(20, -10)
-    turn_to(straight_heading-6)
-    straight_heading = imu.heading()
-    smooth_acceleration(80, -1670)
-    turn_by(40)
-    smooth_acceleration(50, -350)
-    turn_to(-straight_heading)
-    smooth_acceleration(70, -520)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE) # hi tim
-    wait(3.5, SECONDS)
-    top_motor.stop()
-    smooth_acceleration(40, 725, end_speed=40)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    smooth_acceleration(60, -725)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    top_motor.stop()
-    smooth_acceleration(60, 350)
-    turn_by(87)
-    smooth_acceleration(80, 2360)
-    #------------------------------------------------------------------------------------------------
-    turn_by(-85)
-    sorter.set(True)
-    mid_motor.spin(FORWARD)
-    straight_heading = imu.heading()
-
-    #collecting the blocks from the loader
-    smooth_acceleration(40, 280, end_speed=40)
-    wait(2.5, SECONDS)
-    mid_motor.stop()
-    turn_to(straight_heading) #smartttttttttttttt
-
-    #going to the long goal
-    smooth_acceleration(70, -250)
-    turn_by(-42)
-    smooth_acceleration(50, -545)
-    turn_by(10)
-    smooth_acceleration(20, -10)
-    turn_by(32)
-    straight_heading = imu.heading()
-    smooth_acceleration(80, -1670)
-    turn_by(40)
-    smooth_acceleration(50, -340)
-    turn_by(130)
-    smooth_acceleration(70, -490)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE) # hi tim
-    wait(3.5, SECONDS)
-    top_motor.stop()
-    smooth_acceleration(40, 725, end_speed=40)
-    wait(2.5, SECONDS)
-    mid_motor.stop()
-    smooth_acceleration(60, -725)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    top_motor.stop()
-    smooth_acceleration(60, 430)
-    turn_by(87)
-    smooth_acceleration(60, 1175)
-    turn_by(-90)
-    drivetrain.drive(FORWARD)
-    wait(1.2, SECONDS)
-    drivetrain.stop()
-    double_parking.set(True)
-    drivetrain.drive_for(REVERSE, 30, MM)
+    smooth_acceleration(50, 500)
+    wait(0.5, SECONDS)
+    smooth_acceleration(50, -100)
     
+    #aligning to get the blocks under the long goal and collecting 'em  
+    #turn_by(-3) 
+    #mid_motor.spin(REVERSE)
+    #smooth_acceleration(FORWARD, 620, MM)
+    #wait(0.5, SECONDS)
+    #mid_motor.stop()
+    #sorter.set(False)
 
+    #going back to the middle goal
+    turn_by(-82)
+    left_drive.set_velocity(70, PERCENT) 
+    right_drive.set_velocity(70, PERCENT)
+    smooth_acceleration(60, -385)
+    
+    #scoring into the middle goal
+    mid_motor.spin(FORWARD)
+    top_motor.spin(REVERSE)
+    wait(1.3, SECONDS)
+    top_motor.stop()
+    turn_by(5)
+    left_drive.set_velocity(70, PERCENT) 
+    right_drive.set_velocity(70, PERCENT)
+
+    #thats the code for the long goal
+    smooth_acceleration(70, 1170)
+    turn_by(-49)
+    left_drive.set_velocity(30, PERCENT) 
+    right_drive.set_velocity(30, PERCENT)
+    sorter.set(True)
+    mid_motor.spin(FORWARD)
+    straight_heading = imu.heading()
+
+    #collecting the blocks from the loader
+    smooth_acceleration(40, 390, end_speed=40)
+    wait(2, SECONDS)
+    mid_motor.stop()
+    turn_to(straight_heading) #
+
+    left_drive.set_velocity(70, PERCENT) 
+    right_drive.set_velocity(70, PERCENT)
+
+    smooth_acceleration(70, -765)
+    mid_motor.set_velocity(100, PERCENT)
+    mid_motor.spin(FORWARD)
+
+    top_motor.spin(REVERSE)
+    wait(5, SECONDS)
+
+
+    mid_motor.stop()
+    top_motor.stop()
+    drivetrain.stop()
     #going to the top left long goal
     
 
@@ -310,12 +278,12 @@ def user_control():
     brain.screen.clear_screen()
     top_motor.set_stopping(HOLD) # tries to freeze when stops
     mid_motor.set_stopping(HOLD)
-    left_motor1.set_stopping(COAST)
-    left_motor2.set_stopping(COAST)
-    right_motor1.set_stopping(COAST)
-    right_motor2.set_stopping(COAST)
-    left_drive.set_stopping(COAST)
-    right_drive.set_stopping(COAST)
+    left_motor1.set_stopping(HOLD)
+    left_motor2.set_stopping(HOLD)
+    right_motor1.set_stopping(HOLD)
+    right_motor2.set_stopping(HOLD)
+    left_drive.set_stopping(HOLD)
+    right_drive.set_stopping(HOLD)
 
 
     prevA = False
@@ -333,18 +301,9 @@ def user_control():
         forward = smooth_input(raw_forward)
 
         # linear turn (tune 0.9..1.2)
-        turn = raw_turn * 1
-
-        # turn kick based on driver "jerk", but only when actually moving
-        dturn = raw_turn - prev_turn
-        prev_turn = raw_turn
-
-        if abs(dturn) > 25 and abs(forward) > 15:
-            turn = turn * 1.25
+        turn = smooth_input(raw_turn)
 
         left_speed, right_speed = mix_arcade(forward, turn)
-
-
         
         left_drive.set_velocity(left_speed, PERCENT) 
         right_drive.set_velocity(right_speed, PERCENT) 
@@ -384,10 +343,10 @@ def user_control():
         #-------- Motor 2
         if controller_1.buttonL2.pressing():
             mid_motor.set_velocity(100, PERCENT)
-            mid_motor.spin(FORWARD)
+            mid_motor.spin(REVERSE)
         elif controller_1.buttonL1.pressing():
             mid_motor.set_velocity(100, PERCENT)
-            mid_motor.spin(REVERSE)
+            mid_motor.spin(FORWARD)
         else:
             mid_motor.stop()
 
