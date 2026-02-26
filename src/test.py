@@ -11,6 +11,7 @@ mid_motor1 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, False)
 mid_motor2 = Motor(Ports.PORT9, GearSetting.RATIO_18_1, True)
 mid_motor = MotorGroup(mid_motor1, mid_motor2)
 
+
 left_motor1 = Motor(Ports.PORT20, GearSetting.RATIO_18_1, False)
 left_motor2 = Motor(Ports.PORT19, GearSetting.RATIO_18_1, False)
 left_drive = MotorGroup(left_motor1, left_motor2)
@@ -28,69 +29,7 @@ double_parking = DigitalOut(brain.three_wire_port.c)
 imu = Inertial(Ports.PORT7)
 
 
-drivetrain = DriveTrain(left_drive, right_drive, 314, 360, 40, MM, 1) 
-# CHECK THIS (wheel travel per 1 cycle, track width, distance between front and back wheels, units, gear ratio )
-
-
-# /// PID
-
-def pid(target_mm, kP=0.25, kI=0.0, kD=0.15,
-                         max_power=80, settle_error=5, settle_time_ms=250, timeout_ms=4000):
-
-    left_drive.reset_position()
-    right_drive.reset_position()
-
-    integral = 0.0
-    last_error = 0.0
-    dt = 0.02 
-
-    settled_ms = 0
-    elapsed_ms = 0
-
-    while elapsed_ms < timeout_ms:
-        
-        left_deg = left_drive.position(DEGREES)
-        right_deg = right_drive.position(DEGREES)
-        avg_deg = (left_deg + right_deg) / 2.0
-
-        wheel_circ_mm = 319.19  
-        traveled_mm = (avg_deg / 360.0) * wheel_circ_mm
-
-        error = target_mm - traveled_mm
-
-        
-        integral += error * dt
-        if integral > 2000: integral = 2000
-        if integral < -2000: integral = -2000
-
-        derivative = (error - last_error) / dt
-        last_error = error
-
-        output = (kP * error) + (kI * integral) + (kD * derivative)
-
-        
-        if output > max_power: output = max_power
-        if output < -max_power: output = -max_power
-
-        drivetrain.set_drive_velocity(abs(output), PERCENT)
-
-        if output >= 0:
-            drivetrain.drive(FORWARD)
-        else:
-            drivetrain.drive(REVERSE)
-
-        
-        if abs(error) <= settle_error:
-            settled_ms += int(dt * 1000)
-            if settled_ms >= settle_time_ms:
-                break
-        else:
-            settled_ms = 0
-
-        wait(int(dt * 1000), MSEC)
-        elapsed_ms += int(dt * 1000)
-
-    drivetrain.stop(BRAKE)
+drivetrain = DriveTrain(left_drive, right_drive, 319.19, 360, 40, MM, 1) 
 
 class GameElementsPushBack:
     BLUE_BLOCK = 0
@@ -107,7 +46,7 @@ detected = False
 apermanence = 0
 def show_vision_reading():
     global detected, apermanence
-    EMPTY_THRESHOLD = 6  # Must be empty for 5 frames to be "confident"
+    EMPTY_THRESHOLD = 5  # Must be empty for 5 frames to be "confident"
     while True:
         controller_1.screen.clear_screen()
 
@@ -124,6 +63,8 @@ def show_vision_reading():
             for obj in objects:
                 if obj.area < MIN_AREA:
                     continue
+
+                frame_has_object = True
 
                 if obj.id == GameElementsPushBack.BLUE_BLOCK:
                     controller_1.screen.print(
@@ -143,16 +84,12 @@ def show_vision_reading():
                     )
                     brain.screen.new_line()
 
-                if obj.centerX < 65: 
-                    print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY))
-                    continue
-
-                frame_has_object = True
-
         if red:
             for obj in red:
                 if obj.area < MIN_AREA:
                     continue
+
+                frame_has_object = True
 
                 controller_1.screen.print(
                     "Red detected at x: {}, y: {}".format(obj.centerX, obj.centerY)
@@ -161,16 +98,14 @@ def show_vision_reading():
                     "Red detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
                 )
                 controller_1.screen.new_line()
-                if obj.centerX < 65: 
-                    print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY))
-                    continue
-
-                frame_has_object = True
 
         if blue:
             for obj in blue:
                 if obj.area < MIN_AREA:
                     continue
+
+                frame_has_object = True
+
                 controller_1.screen.print(
                     "Blue detected at x: {}, y: {}".format(obj.centerX, obj.centerY)
                 )
@@ -178,11 +113,6 @@ def show_vision_reading():
                     "Blue detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
                 )
                 controller_1.screen.new_line()
-                if obj.centerX < 65:
-                    print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY)) 
-                    continue
-
-                frame_has_object = True
 
         if frame_has_object:
             apermanence = 0    # Reset: we found something!
@@ -197,9 +127,9 @@ def show_vision_reading():
         print(apermanence)
         controller_1.screen.print(detected)
         controller_1.screen.new_line() 
-        wait(175, MSEC)
-
-
+        wait(100, MSEC)
+# CHECK THIS (wheel travel per 1 cycle, track width, distance between front and back wheels, units, gear ratio )
+   
 # /// INERTIAL SENSOR 
 
 def calibrate_imu():
@@ -213,9 +143,9 @@ def wrap180(deg):
     while deg < -180: deg += 360
     return deg
 
-def turn_to(target_deg, kP=1.5, min_speed=8, max_speed=50, tol=1.5):
+def turn_to(target_deg, kP=0.6, min_speed=8, max_speed=30, tol=1.5):
     while True:
-        err = wrap180(target_deg - imu.rotation(DEGREES))
+        err = wrap180(target_deg - imu.heading(DEGREES))
 
         if abs(err) <= tol:
             break
@@ -231,7 +161,7 @@ def turn_to(target_deg, kP=1.5, min_speed=8, max_speed=50, tol=1.5):
         left_drive.spin(FORWARD)
         right_drive.spin(FORWARD)
 
-        wait(0, MSEC)
+        wait(10, MSEC)
 
     left_drive.stop()
     right_drive.stop()
@@ -255,27 +185,6 @@ def turn_by(delta_deg, **kwargs):
 
 # -- end of the code for Inertial Sensor
 
-def turn_one_side(deg=90, side=RIGHT, speed=60):
-
-    left_drive.stop()
-    right_drive.stop()
-
-    if side == LEFT:
-        left_drive.set_velocity(0, PERCENT)
-        right_drive.set_velocity(speed, PERCENT)
-        right_drive.spin_for(FORWARD, deg, DEGREES)
-
-    elif side == RIGHT:
-        right_drive.set_velocity(0, PERCENT)
-        left_drive.set_velocity(speed, PERCENT)
-        left_drive.spin_for(FORWARD, deg, DEGREES)
-
-    else:
-        controller_1.screen.clear_screen()
-        controller_1.screen.print("Invalid side")
-
-
-
 def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     # expo: 0 = linear, 1 = very soft center
     if abs(value) < deadband:
@@ -283,7 +192,7 @@ def smooth_input(value, deadband=10, expo=0.35, scale=1.0):
     x = value / 100.0
     y = (1 - expo) * x + expo * (x * x * x)
     return y * 100 * scale
-
+    
 def smooth_acceleration(input_speed, distance_mm, start_speed=30, end_speed=20):
     if distance_mm == 0:
         left_drive.stop()
@@ -332,15 +241,16 @@ def smooth_acceleration(input_speed, distance_mm, start_speed=30, end_speed=20):
     left_drive.stop(BRAKE)
     right_drive.stop(BRAKE)
 
-
 def pre_autonomous():
     brain.screen.clear_screen()
     controller_1.screen.clear_screen()
+    calibrate_imu()
     imu.set_rotation(0, DEGREES)
+    sorter.set(False)
     bunny_ear.set(True)
     double_parking.set(False)
     Thread(show_vision_reading)
-    wait(2, SECONDS)      
+    wait(2, SECONDS)       
                                                                                                                                                                     
 def mid_motor_break():
     time = 0.5
@@ -352,6 +262,29 @@ def mid_motor_break():
         wait(time, SECONDS)
         time += 0.3
 
+bunny_ear_state = False
+sorter_state = False
+double_parking_state = False
+#SWITCH to autonomous() from user_control() -----------------------------------------------------------------------------
+def autonomous():
+    imu.set_rotation(0, DEGREES)
+    #initial settings
+    bunny_ear.set(False)
+    mid_motor.set_velocity(100, PERCENT)
+    top_motor.set_velocity(100, PERCENT)
+    mid_motor.spin(FORWARD)
+    sorter.set(True)
+    #driving to the first loader
+    smooth_acceleration(40, 355, end_speed=40)
+    wait(1, SECONDS)
+    while True:
+        wait(20, MSEC)
+        if not detected:  # if the block is detected for more than 3 cycles
+            break
+
+    mid_motor.stop()
+    top_motor.stop()
+    drivetrain.stop()
 
 def mix_arcade(forward, turn): 
     # makes the robot to be able to turn and go forward at the same time
@@ -367,143 +300,6 @@ def mix_arcade(forward, turn):
 
 def deadband(v, db=10):
     return 0 if abs(v) < db else v
-
-bunny_ear_state = False
-sorter_state = False
-double_parking_state = False
-
-#SWITCH to autonomous() from user_control() -----------------------------------------------------------------------------
-def autonomous():
-    imu.set_rotation(0, DEGREES)
-    #initial settings
-    bunny_ear.set(False)
-    mid_motor.set_velocity(100, PERCENT)
-    top_motor.set_velocity(100, PERCENT)
-
-    # #driving to the first loader
-    # smooth_acceleration(90, 1175, end_speed=40)
-    # sorter.set(True)
-    # turn_by(-85)
-    # mid_motor.spin(FORWARD)
-    # straight_heading = imu.heading()
-    # controller_1.screen.print(straight_heading)
-
-    # #collecting the blocks from the loader
-    # smooth_acceleration(40, 315, end_speed=40)
-    # wait(1, SECONDS)
-    # while detected:
-    #     wait(200, MSEC)
-    #     smooth_acceleration(40, 10, end_speed=40)
-
-    # mid_motor.stop()
-    # #turn_to(straight_heading) #smartttttttttttttt
-
-    # #going to the long goal and scoring the blocks
-    # smooth_acceleration(70, -270, start_speed=40, end_speed=40)
-    # turn_by(-35)
-    # smooth_acceleration(70, -545, start_speed=40, end_speed=40)
-    # turn_by(35)
-    # #straight_heading = imu.heading()
-    # smooth_acceleration(100, -1670, end_speed=40, start_speed=30)
-    # turn_by(50)
-    # smooth_acceleration(70, -270, start_speed=50, end_speed=40)
-    # turn_by(122)
-    # current_heading = imu.heading()
-    # controller_1.screen.print(current_heading)
-    # '''
-    # is_imu_right = False
-    # if abs(straight_heading) - abs(current_heading) <= 2 and abs(straight_heading) - abs(current_heading) >= -2:
-    #     turn_to(straight_heading)
-    #     is_imu_right = True
-    # '''
-    
-    # smooth_acceleration(70, -570)
-    # mid_motor.spin(FORWARD)
-    # top_motor.spin(REVERSE) # hi tim
-    # wait(3.5, SECONDS)
-    # top_motor.stop()
-    
-    # #finished scoring the blocks from the first loader
-    # #2nd loader
-    # '''
-    # turn_by(2)
-    # if is_imu_right == True:
-    #     turn_to(straight_heading)
-    # '''
-    mid_motor.spin(FORWARD)
-    sorter.set(True)
-    smooth_acceleration(40, 725, end_speed=40)
-    wait(1, SECONDS)
-    while detected:
-        wait(20, MSEC)
-    mid_motor.stop()
-    smooth_acceleration(80, -725, end_speed=40, start_speed=70)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    top_motor.stop()
-
-    #going to the third loader
-    smooth_acceleration(80, 350, start_speed=70, end_speed=50)
-    turn_by(87)
-    smooth_acceleration(100, 2360, end_speed=40, start_speed=70)
-    #------------------------------------------------------------------------------------------------
-    turn_by(-85)
-    sorter.set(True)
-    mid_motor.spin(FORWARD)
-    straight_heading = imu.heading()
-
-    #collecting the blocks from the loader
-    smooth_acceleration(40, 310, end_speed=40)
-    wait(1, SECONDS)
-    while detected:
-        wait(200, MSEC)
-        smooth_acceleration(40, 10, end_speed=40)
-    mid_motor.stop()
-    #turn_to(straight_heading) #smartttttttttttttt
-
-    #going to the long goal
-    smooth_acceleration(70, -250, start_speed=40, end_speed=40)
-    turn_by(-40)
-    smooth_acceleration(50, -615, start_speed=40, end_speed=40)
-    turn_by(40)
-    smooth_acceleration(100, -1670, end_speed=40, start_speed=60)
-    turn_by(50)
-    smooth_acceleration(50, -270, start_speed=40, end_speed=40)
-    turn_by(120)
-    
-    smooth_acceleration(70, -585, start_speed=40)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE) # hi tim
-    wait(3.5, SECONDS)
-    top_motor.stop()
-    
-    #finished scoring the blocks from the third loader
-    #4th loader
-    smooth_acceleration(40, 710, end_speed=40)
-    wait(1, SECONDS)
-    while detected:
-        wait(200, MSEC)
-        smooth_acceleration(40, 10, end_speed=40)
-    mid_motor.stop()
-    smooth_acceleration(80, -710, end_speed=40, start_speed=70)
-    mid_motor.spin(FORWARD)
-    top_motor.spin(REVERSE)
-    wait(3.5, SECONDS)
-    mid_motor.stop()
-    top_motor.stop()
-    
-    #going to the parking zone
-    smooth_acceleration(80, 350, start_speed=60, end_speed=60)
-    turn_by(87)
-    smooth_acceleration(100, 1175, start_speed=70, end_speed=70)
-    turn_by(-90)
-    drivetrain.drive(FORWARD)
-    wait(1.2, SECONDS)
-    drivetrain.stop()
-    double_parking.set(True)
-    drivetrain.drive_for(REVERSE, 30, MM)
 
 #SWITCH to user_control() from autonomous() -----------------------------------------------------------------------------------
 def user_control():
