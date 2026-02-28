@@ -380,64 +380,60 @@ def autonomous():
     mid_motor.set_velocity(100, PERCENT)
     top_motor.set_velocity(100, PERCENT)
 
-    # #driving to the first loader
-    # smooth_acceleration(90, 1175, end_speed=40)
-    # sorter.set(True)
-    # turn_by(-85)
-    # mid_motor.spin(FORWARD)
-    # straight_heading = imu.heading()
-    # controller_1.screen.print(straight_heading)
-
-    # #collecting the blocks from the loader
-    # smooth_acceleration(40, 315, end_speed=40)
-    # wait(1, SECONDS)
-    # while detected:
-    #     wait(200, MSEC)
-    #     smooth_acceleration(40, 10, end_speed=40)
-
-    # mid_motor.stop()
-    # #turn_to(straight_heading) #smartttttttttttttt
-
-    # #going to the long goal and scoring the blocks
-    # smooth_acceleration(70, -270, start_speed=40, end_speed=40)
-    # turn_by(-35)
-    # smooth_acceleration(70, -545, start_speed=40, end_speed=40)
-    # turn_by(35)
-    # #straight_heading = imu.heading()
-    # smooth_acceleration(100, -1670, end_speed=40, start_speed=30)
-    # turn_by(50)
-    # smooth_acceleration(70, -270, start_speed=50, end_speed=40)
-    # turn_by(122)
-    # current_heading = imu.heading()
-    # controller_1.screen.print(current_heading)
-    # '''
-    # is_imu_right = False
-    # if abs(straight_heading) - abs(current_heading) <= 2 and abs(straight_heading) - abs(current_heading) >= -2:
-    #     turn_to(straight_heading)
-    #     is_imu_right = True
-    # '''
-    
-    # smooth_acceleration(70, -570)
-    # mid_motor.spin(FORWARD)
-    # top_motor.spin(REVERSE) # hi tim
-    # wait(3.5, SECONDS)
-    # top_motor.stop()
-    
-    # #finished scoring the blocks from the first loader
-    # #2nd loader
-    # '''
-    # turn_by(2)
-    # if is_imu_right == True:
-    #     turn_to(straight_heading)
-    # '''
-    mid_motor.spin(FORWARD)
+     #driving to the first loader
+    smooth_acceleration(90, 1175, end_speed=40)
     sorter.set(True)
-    smooth_acceleration(40, 725, end_speed=40)
+    turn_by(-85)
+    mid_motor.spin(FORWARD)
+    straight_heading = imu.heading()
+    controller_1.screen.print(straight_heading)
+
+    #collecting the blocks from the loader
+    smooth_acceleration(40, 305, end_speed=40)
     wait(1, SECONDS)
     while detected:
-        wait(20, MSEC)
+        wait(200, MSEC)
+        smooth_acceleration(40, 10, end_speed=40)
+        smooth_acceleration(-30, 10, end_speed=40)
+
     mid_motor.stop()
-    smooth_acceleration(80, -725, end_speed=40, start_speed=70)
+    #turn_to(straight_heading) #smartttttttttttttt
+
+    #going to the long goal and scoring the blocks
+    smooth_acceleration(70, -270, start_speed=40, end_speed=40)
+    turn_by(-40)
+    smooth_acceleration(70, -545, start_speed=40, end_speed=40)
+    turn_by(40)
+    #straight_heading = imu.heading()
+    smooth_acceleration(100, -1670, end_speed=40, start_speed=30)
+    turn_by(50)
+    smooth_acceleration(70, -260, start_speed=50, end_speed=40)
+    turn_by(120)
+        
+    smooth_acceleration(70, -570)
+    mid_motor.spin(FORWARD)
+    top_motor.spin(REVERSE) # hi tim
+    
+    wait(3.5, SECONDS)
+    top_motor.stop()
+    
+    #finished scoring the blocks from the first loader
+    #2nd loader
+    # controller_1.screen.print(current_heading)
+    current_heading = imu.heading()
+    mid_motor.spin(FORWARD)
+    sorter.set(True)
+    turn_by(0.5)
+    smooth_acceleration(40, 750, end_speed=40)
+    wait(1, SECONDS)
+    while detected:
+        wait(200, MSEC)
+        smooth_acceleration(40, 10, end_speed=40)
+        smooth_acceleration(-30, 10, end_speed=40)
+       
+    #DO NOT ADD 1 DEGREE HERE
+    mid_motor.stop()
+    smooth_acceleration(80, -750, end_speed=40, start_speed=70)
     mid_motor.spin(FORWARD)
     top_motor.spin(REVERSE)
     wait(3.5, SECONDS)
@@ -445,17 +441,17 @@ def autonomous():
     top_motor.stop()
 
     #going to the third loader
-    smooth_acceleration(80, 350, start_speed=70, end_speed=50)
-    turn_by(87)
+    smooth_acceleration(80, 320, start_speed=70, end_speed=50)
+    turn_by(84.3)
     smooth_acceleration(100, 2360, end_speed=40, start_speed=70)
     #------------------------------------------------------------------------------------------------
-    turn_by(-85)
+    turn_by(-87)
     sorter.set(True)
     mid_motor.spin(FORWARD)
-    straight_heading = imu.heading()
+    #straight_heading = imu.heading()
 
     #collecting the blocks from the loader
-    smooth_acceleration(40, 310, end_speed=40)
+    smooth_acceleration(40, 400, end_speed=40)
     wait(1, SECONDS)
     while detected:
         wait(200, MSEC)
@@ -465,13 +461,13 @@ def autonomous():
 
     #going to the long goal
     smooth_acceleration(70, -250, start_speed=40, end_speed=40)
-    turn_by(-40)
+    turn_by(-35)
     smooth_acceleration(50, -615, start_speed=40, end_speed=40)
-    turn_by(40)
+    turn_by(35)
     smooth_acceleration(100, -1670, end_speed=40, start_speed=60)
     turn_by(50)
-    smooth_acceleration(50, -270, start_speed=40, end_speed=40)
-    turn_by(120)
+    smooth_acceleration(50, -240, start_speed=40, end_speed=40)
+    turn_by(122)
     
     smooth_acceleration(70, -585, start_speed=40)
     mid_motor.spin(FORWARD)
@@ -494,7 +490,7 @@ def autonomous():
     mid_motor.stop()
     top_motor.stop()
     
-    #going to the parking zone
+    #going to the parking zone 
     smooth_acceleration(80, 350, start_speed=60, end_speed=60)
     turn_by(87)
     smooth_acceleration(100, 1175, start_speed=70, end_speed=70)
@@ -504,7 +500,7 @@ def autonomous():
     drivetrain.stop()
     double_parking.set(True)
     drivetrain.drive_for(REVERSE, 30, MM)
-
+    
 #SWITCH to user_control() from autonomous() -----------------------------------------------------------------------------------
 def user_control():
     global bunny_ear_state, sorter_state, double_parking_state

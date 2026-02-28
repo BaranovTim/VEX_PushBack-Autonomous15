@@ -32,66 +32,6 @@ drivetrain = DriveTrain(left_drive, right_drive, 314, 360, 40, MM, 1)
 # CHECK THIS (wheel travel per 1 cycle, track width, distance between front and back wheels, units, gear ratio )
 
 
-# /// PID
-
-def pid(target_mm, kP=0.25, kI=0.0, kD=0.15,
-                         max_power=80, settle_error=5, settle_time_ms=250, timeout_ms=4000):
-
-    left_drive.reset_position()
-    right_drive.reset_position()
-
-    integral = 0.0
-    last_error = 0.0
-    dt = 0.02 
-
-    settled_ms = 0
-    elapsed_ms = 0
-
-    while elapsed_ms < timeout_ms:
-        
-        left_deg = left_drive.position(DEGREES)
-        right_deg = right_drive.position(DEGREES)
-        avg_deg = (left_deg + right_deg) / 2.0
-
-        wheel_circ_mm = 319.19  
-        traveled_mm = (avg_deg / 360.0) * wheel_circ_mm
-
-        error = target_mm - traveled_mm
-
-        
-        integral += error * dt
-        if integral > 2000: integral = 2000
-        if integral < -2000: integral = -2000
-
-        derivative = (error - last_error) / dt
-        last_error = error
-
-        output = (kP * error) + (kI * integral) + (kD * derivative)
-
-        
-        if output > max_power: output = max_power
-        if output < -max_power: output = -max_power
-
-        drivetrain.set_drive_velocity(abs(output), PERCENT)
-
-        if output >= 0:
-            drivetrain.drive(FORWARD)
-        else:
-            drivetrain.drive(REVERSE)
-
-        
-        if abs(error) <= settle_error:
-            settled_ms += int(dt * 1000)
-            if settled_ms >= settle_time_ms:
-                break
-        else:
-            settled_ms = 0
-
-        wait(int(dt * 1000), MSEC)
-        elapsed_ms += int(dt * 1000)
-
-    drivetrain.stop(BRAKE)
-
 class GameElementsPushBack:
     BLUE_BLOCK = 0
     RED_BLOCK = 1
@@ -105,14 +45,9 @@ vision = AiVision(Ports.PORT2, AiVision.ALL_AIOBJS, AiColors.RED, AiColors.BLUE)
 MIN_AREA = 3500   # Adjust if needed
 detected = False  
 apermanence = 0
-detected_red = False
-detected_blue = False
-
-LOGGING_ENABLED = False  # Set to False to disable all console logging
-
 def show_vision_reading():
-    global detected, apermanence, detected_red, detected_blue, largest_object, color
-    EMPTY_THRESHOLD = 6
+    global detected, apermanence
+    EMPTY_THRESHOLD = 6  # Must be empty for 5 frames to be "confident"
     while True:
         controller_1.screen.clear_screen()
 
@@ -122,48 +57,34 @@ def show_vision_reading():
 
         if not vision.installed():
             brain.screen.print("no vision sensor")
-        
         frame_has_object = False
-        frame_has_red = False
-        frame_has_blue = False
-        largest_object = None
-        largest_area = 0
+        
 
         if objects:
             for obj in objects:
                 if obj.area < MIN_AREA:
                     continue
 
-                # Track largest object
-                if obj.area > largest_area:
-                    largest_area = obj.area
-                    largest_object = obj
-
                 if obj.id == GameElementsPushBack.BLUE_BLOCK:
                     controller_1.screen.print(
                         "Blue block detected at x: {}, y: {}".format(obj.centerX, obj.centerY)
                     )
-                    if LOGGING_ENABLED:
-                        print(
-                            "Blue block detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
-                        )
+                    print(
+                        "Blue block detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
+                    )
                     brain.screen.new_line()
-                    frame_has_blue = True
 
                 if obj.id == GameElementsPushBack.RED_BLOCK:
                     controller_1.screen.print(
                         "Red block detected at x: {}, y: {}".format(obj.centerX, obj.centerY)
                     )
-                    if LOGGING_ENABLED:
-                        print(
-                            "Red block detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
-                        )
+                    print(
+                        "Red block detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
+                    )
                     brain.screen.new_line()
-                    frame_has_red = True
 
-                if obj.centerX < 65:
-                    if LOGGING_ENABLED:
-                        print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY))
+                if obj.centerX < 65: 
+                    print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY))
                     continue
 
                 frame_has_object = True
@@ -172,49 +93,39 @@ def show_vision_reading():
             for obj in red:
                 if obj.area < MIN_AREA:
                     continue
-                if obj.area > largest_area:
-                    largest_area = obj.area
-                    largest_object = obj
+
                 controller_1.screen.print(
                     "Red detected at x: {}, y: {}".format(obj.centerX, obj.centerY)
                 )
-                if LOGGING_ENABLED:
-                    print(
-                        "Red detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
-                    )
+                print(
+                    "Red detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
+                )
                 controller_1.screen.new_line()
-                if obj.centerX < 65:
-                    if LOGGING_ENABLED:
-                        print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY))
+                if obj.centerX < 65: 
+                    print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY))
                     continue
+
                 frame_has_object = True
-                frame_has_red = True
 
         if blue:
             for obj in blue:
                 if obj.area < MIN_AREA:
                     continue
-                if obj.area > largest_area:
-                    largest_area = obj.area
-                    largest_object = obj
                 controller_1.screen.print(
                     "Blue detected at x: {}, y: {}".format(obj.centerX, obj.centerY)
                 )
-                if LOGGING_ENABLED:
-                    print(
-                        "Blue detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
-                    )
+                print(
+                    "Blue detected at x: {}, y: {}, width: {}, height: {}".format(obj.centerX, obj.centerY, obj.width, obj.height)
+                )
                 controller_1.screen.new_line()
-
                 if obj.centerX < 65:
-                    if LOGGING_ENABLED:
-                        print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY))
+                    print("Ignoring object at x: {}, y: {} because it's too far left".format(obj.centerX, obj.centerY)) 
                     continue
+
                 frame_has_object = True
-                frame_has_blue = True
 
         if frame_has_object:
-            apermanence = 0
+            apermanence = 0    # Reset: we found something!
             detected = True
         if not frame_has_object:
             apermanence += 1
@@ -222,23 +133,11 @@ def show_vision_reading():
             apermanence = 0
         if apermanence >= EMPTY_THRESHOLD:
             detected = False
-        
-        detected_red = frame_has_red
-        detected_blue = frame_has_blue
-        
-        # Print largest object info
-        if largest_object:
-            color = "RED" if largest_object.id == GameElementsPushBack.RED_BLOCK else "BLUE"
-            controller_1.screen.print("Largest: {} ({})".format(color, largest_area))
-            if LOGGING_ENABLED:
-                print("Largest object: {} with area {}".format(color, largest_area))
-        
-        if LOGGING_ENABLED:
-            print(detected)
-            print(apermanence)
+        print(detected)
+        print(apermanence)
         controller_1.screen.print(detected)
         controller_1.screen.new_line() 
-        wait(135, MSEC)
+        wait(175, MSEC)
 
 
 # /// INERTIAL SENSOR 
@@ -419,86 +318,169 @@ def autonomous():
     #initial settings
     bunny_ear.set(False)
     mid_motor.set_velocity(100, PERCENT)
-    top_motor.set_velocity(55, PERCENT)
-    smooth_acceleration(70, 240, start_speed=30)
-    turn_by(49)                    
-    #collecting the middle blocks
-    mid_motor.spin(FORWARD)
-    smooth_acceleration(50, 639, end_speed=10)
-    wait(0.5, SECONDS)
-    smooth_acceleration(50, -100)
-    
-    #aligning to get the blocks under the long goal and collecting 'em  
-    #turn_by(-3) 
-    #mid_motor.spin(REVERSE)
-    #smooth_acceleration(FORWARD, 620, MM)
-    #wait(0.5, SECONDS)
-    #mid_motor.stop()
-    #sorter.set(False)
-
-    #going back to the middle goal
-    turn_by(-83)
-    left_drive.set_velocity(70, PERCENT) 
-    right_drive.set_velocity(70, PERCENT)
-    smooth_acceleration(60, 385)
-    
-    #scoring into the middle goal
-    mid_motor.spin(REVERSE)
-    top_motor.spin(FORWARD)
-    wait(1, SECONDS)
     top_motor.set_velocity(100, PERCENT)
-    top_motor.stop()
-    turn_by(-3)
-    left_drive.set_velocity(70, PERCENT) 
-    right_drive.set_velocity(70, PERCENT)
 
-    #thats the code for the long goal
-    smooth_acceleration(100, 1180)
-    turn_by(49)
-    # left_drive.set_velocity(30, PERCENT) 
-    # right_drive.set_velocity(30, PERCENT)
+    def cancelled():
+        return controller_1.buttonB.pressing()
+
+    #driving to the first loader
+    if cancelled(): return 
+    smooth_acceleration(90, 1175, end_speed=40)
     sorter.set(True)
+    turn_by(-85)
     mid_motor.spin(FORWARD)
-    # straight_heading = imu.heading()
+    straight_heading = imu.heading()
+    controller_1.screen.print(straight_heading)
 
     #collecting the blocks from the loader
-    smooth_acceleration(40, 410, end_speed=40)
-    start_time = time.time()
-    while time.time() - start_time < 1.2: 
-        wait(150, MSEC)
-        smooth_acceleration(30, 10, end_speed=40)
-        wait(150, MSEC)
-        smooth_acceleration(-20, 10, end_speed=40) # Run for 3 seconds
-    # if largest_object: 
-    #     team_color = color
-    #     print("Team color detected:", team_color)
-    # while detected:
-    #     wait(50, MSEC)
-    #     smooth_acceleration(20, 10, end_speed=40)
-    #     smooth_acceleration(-10, 10, end_speed=40)
-    #     if largest_object:
-    #         if color != team_color:
-    #             break
+    if cancelled(): return 
+    smooth_acceleration(40, 315, end_speed=40)
+    wait(1, SECONDS)
+    while detected:
+        wait(200, MSEC)
+        if cancelled(): return 
+        smooth_acceleration(40, 10, end_speed=40)
+
     mid_motor.stop()
-    # turn_to(straight_heading) #
+    #turn_to(straight_heading) #smartttttttttttttt
 
-    # left_drive.set_velocity(70, PERCENT) 
-    # right_drive.set_velocity(70, PERCENT)
-
-    smooth_acceleration(70, -350)
-    turn_by(4)
-    smooth_acceleration(70, -350)
-    # mid_motor.set_velocity(100, PERCENT)
+    #going to the long goal and scoring the blocks
+    if cancelled(): return 
+    smooth_acceleration(70, -270, start_speed=40, end_speed=40)
+    turn_by(-35)
+    if cancelled(): return 
+    smooth_acceleration(70, -545, start_speed=40, end_speed=40)
+    turn_by(35)
+    if cancelled(): return 
+    #straight_heading = imu.heading()
+    smooth_acceleration(100, -1670, end_speed=40, start_speed=30)
+    turn_by(50)
+    if cancelled(): return 
+    smooth_acceleration(70, -255, start_speed=50, end_speed=40)
+    turn_by(122)
+    if cancelled(): return 
+    current_heading = imu.heading()
+    controller_1.screen.print(current_heading)
+    '''
+    # is_imu_right = False
+    # if abs(straight_heading) - abs(current_heading) <= 2 and abs(straight_heading) - abs(current_heading) >= -2:
+    #     turn_to(straight_heading)
+    #     is_imu_right = True
+    '''
+    
+    smooth_acceleration(70, -570)
+    if cancelled(): return 
+    mid_motor.spin(FORWARD)
+    top_motor.spin(REVERSE) # hi tim
+    turn_by(0.7)
+    wait(3.5, SECONDS)
+    top_motor.stop()
+    
+    #finished scoring the blocks from the first loader
+    #2nd loader
+    '''
+    # turn_by(2)
+    # if is_imu_right == True:
+    #     turn_to(straight_heading)
+    '''
+    #current_heading = imu.heading()
+    # controller_1.screen.print(current_heading)
+    mid_motor.spin(FORWARD)
+    sorter.set(True)
+    smooth_acceleration(40, 750, end_speed=40)
+    if cancelled(): return 
+    wait(1, SECONDS)
+    while detected:
+        wait(200, MSEC)
+        smooth_acceleration(40, 10, end_speed=40)
+        if cancelled(): return 
+       
+    
+    mid_motor.stop()
+    smooth_acceleration(80, -750, end_speed=40, start_speed=70)
+    if cancelled(): return 
     mid_motor.spin(FORWARD)
     top_motor.spin(REVERSE)
-    wait(5, SECONDS)
-
-
+    wait(3.5, SECONDS)
     mid_motor.stop()
     top_motor.stop()
-    drivetrain.stop()
-    #going to the top left long goal
+
+    #going to the third loader
+    smooth_acceleration(80, 320, start_speed=70, end_speed=50)
+    if cancelled(): return 
+    turn_by(84.3)
+    if cancelled(): return 
+    smooth_acceleration(100, 2360, end_speed=40, start_speed=70)
+    if cancelled(): return
+    #------------------------------------------------------------------------------------------------
+    turn_by(-87)
+    sorter.set(True)
+    mid_motor.spin(FORWARD)
+    #straight_heading = imu.heading()
+
+    #collecting the blocks from the loader
+    smooth_acceleration(40, 400, end_speed=40)
+    if cancelled(): return 
+    wait(1, SECONDS)
+    while detected:
+        wait(200, MSEC)
+        smooth_acceleration(40, 10, end_speed=40)
+        if cancelled(): return 
+    mid_motor.stop()
+    #turn_to(straight_heading) #smartttttttttttttt
+
+    #going to the long goal
+    smooth_acceleration(70, -250, start_speed=40, end_speed=40)
+    turn_by(-35)
+    if cancelled(): return 
+    smooth_acceleration(50, -615, start_speed=40, end_speed=40)
+    turn_by(35)
+    if cancelled(): return 
+    smooth_acceleration(100, -1670, end_speed=40, start_speed=60)
+    if cancelled(): return 
+    turn_by(50)
+    smooth_acceleration(50, -240, start_speed=40, end_speed=40)
+    if cancelled(): return 
+    turn_by(122)
     
+    smooth_acceleration(70, -585, start_speed=40)
+    if cancelled(): return 
+    mid_motor.spin(FORWARD)
+    top_motor.spin(REVERSE) # hi tim
+    wait(3.5, SECONDS)
+    top_motor.stop()
+    
+    #finished scoring the blocks from the third loader
+    #4th loader
+    smooth_acceleration(40, 710, end_speed=40)
+    if cancelled(): return 
+    wait(1, SECONDS)
+    while detected:
+        wait(200, MSEC)
+        smooth_acceleration(40, 10, end_speed=40)
+        if cancelled(): return 
+    mid_motor.stop()
+    smooth_acceleration(80, -710, end_speed=40, start_speed=70)
+    if cancelled(): return 
+    mid_motor.spin(FORWARD)
+    top_motor.spin(REVERSE)
+    wait(3.5, SECONDS)
+    mid_motor.stop()
+    top_motor.stop()
+    
+    #going to the parking zone 
+    smooth_acceleration(80, 350, start_speed=60, end_speed=60)
+    turn_by(87)
+    if cancelled(): return 
+    smooth_acceleration(100, 1175, start_speed=70, end_speed=70)
+    if cancelled(): return 
+    turn_by(-90)
+    if cancelled(): return
+    drivetrain.drive(FORWARD)
+    wait(1.2, SECONDS)
+    drivetrain.stop()
+    double_parking.set(True)
+    drivetrain.drive_for(REVERSE, 30, MM)
 
 #SWITCH to user_control() from autonomous() -----------------------------------------------------------------------------------
 def user_control():
@@ -518,6 +500,8 @@ def user_control():
     prevB = False
     prevY = False
     prev_turn = 0
+
+    autonomous()
 
     while True:
 
