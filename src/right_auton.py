@@ -424,20 +424,10 @@ def autonomous():
     turn_by(49)                    
     #collecting the middle blocks
     mid_motor.spin(FORWARD)
-    smooth_acceleration(50, 639, end_speed=10)
+    smooth_acceleration(50, 629, end_speed=10)
     wait(0.5, SECONDS)
     smooth_acceleration(50, -100)
-    
-    #aligning to get the blocks under the long goal and collecting 'em  
-    #turn_by(-3) 
-    #mid_motor.spin(REVERSE)
-    #smooth_acceleration(FORWARD, 620, MM)
-    #wait(0.5, SECONDS)
-    #mid_motor.stop()
-    #sorter.set(False)
-
-    #going back to the middle goal
-    turn_by(-83)
+    turn_by(-88)
     left_drive.set_velocity(70, PERCENT) 
     right_drive.set_velocity(70, PERCENT)
     smooth_acceleration(60, 385)
@@ -453,7 +443,7 @@ def autonomous():
     right_drive.set_velocity(70, PERCENT)
 
     #thats the code for the long goal
-    smooth_acceleration(100, 1180)
+    smooth_acceleration(100, -1180)
     turn_by(49)
     # left_drive.set_velocity(30, PERCENT) 
     # right_drive.set_velocity(30, PERCENT)
